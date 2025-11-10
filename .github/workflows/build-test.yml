@@ -1,11 +1,9 @@
 name: 'Build Test'
 
 on:
-  # プルリクエストが作成されたら実行
   pull_request:
     branches:
-      - 'main'
-  # 任意のタイミングでビルド実行
+      - main
   workflow_dispatch:
 
 jobs:
