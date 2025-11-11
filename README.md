@@ -1,6 +1,6 @@
 # My NixOS Host Configuration (`nixos-host-config`)
 
-This is my **private** repository for managing NixOS host-specific configurations. It works with the public `nixos-dev-base` repository to create a fully declarative development environment.
+This is my repository for managing NixOS host-specific configurations.
 
 ## 1. Initial Setup
 
