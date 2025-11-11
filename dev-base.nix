@@ -14,6 +14,14 @@
     direnv
   ];
 
+  # Enavle vim and vi alias
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+    viAlias = true;
+    vimAlias = true;
+  };
+
   # Enable tailscale 
   services.tailscale.enable = true;
 
