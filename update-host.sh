@@ -11,7 +11,7 @@ echo "--- Applying NixOS System Updates ---"
 echo '--- Pulling latest changes from Git ($GIT_BRANCH) ---'
 git pull origin $GIT_BRANCH
 
-echo '--- Updating flake inputs (like nix-dev-base) ---'
+echo '--- Updating flake inputs (like nixos-dev-base) ---'
 sudo nix flake update
 
 echo '---  Rebuild NixOS ---'

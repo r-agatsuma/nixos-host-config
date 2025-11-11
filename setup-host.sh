@@ -2,7 +2,7 @@
 set -e # エラーが出たら即座に停止
 
 # --- 設定 ---
-CONFIG_DIR_TARGET="/home/dev/src/nix-host-config" # 設定ファイルの最終的な場所
+CONFIG_DIR_TARGET="/home/dev/src/nixos-host-config" # 設定ファイルの最終的な場所
 CONFIG_DIR_SYMLINK="/etc/nixos"                  # NixOSが参照するシンボリックリンク
 HOST_FLAKE_NAME="nixos"                          # flake.nixで定義したホスト名
 # このスクリプトが今いるディレクトリ

@@ -4,19 +4,19 @@
   inputs = {
     nixpkgs.url = "github:Nixos/nixpkgs/nixos-25.05";
 
-    nix-dev-base = {
-      url = "github:r-agatsuma/nix-dev-base";
+    nixos-dev-base = {
+      url = "github:r-agatsuma/nixos-dev-base";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
-  outputs = { self, nixpkgs, nix-dev-base, ... }@inputs: {
+  outputs = { self, nixpkgs, nixos-dev-base, ... }@inputs: {
     nixosConfigurations."nixos" = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
 
       modules = [
         ./hardware-configuration.nix
-        nix-dev-base.nixosModules.default
+        nixos-dev-base.nixosModules.default
         ./user.nix
         { 
           boot.loader.systemd-boot.enable = true;
@@ -31,7 +31,7 @@
       system = "x86_64-linux";
       modules = [
         ./hardware-ci.nix
-        nix-dev-base.nixosModules.default
+        nixos-dev-base.nixosModules.default
         ./user.nix
         { 
           users.allowNoPasswordLogin = true;
