@@ -5,10 +5,6 @@
     isNormalUser = true;
     description = "Developer User";
     extraGroups = [ "wheel" ];
-    # パスワードを設定 (GUIでログインする場合などは要設定)
-    # このハッシュは 'mkpasswd -m sha-512' コマンドで生成
-    # "YOUR_PASSWORD" は平文で書くな！
-    # hashedPassword = "!!PASTE_YOUR_GENERATED_HASH_HERE!!";
     openssh.authorizedKeys.keys = [
       # ADD YOUR SSH PUBLIC KEYS HERE
       # "ssh-ed25519 AAAA... USER1@KEY1"
