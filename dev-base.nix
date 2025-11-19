@@ -2,6 +2,7 @@
 {
   # List packages installed in system profile
   environment.systemPackages = with pkgs; [
+    wget
     tmux
     git
     gh
