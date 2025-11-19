@@ -46,6 +46,7 @@
   # Enable the OpenSSH daemon.
   services.openssh = {
     enable = true;
+    authorizedKeysFiles = [ ".ssh/authorized_keys" ];
     settings = {
       PasswordAuthentication = false;
       PermitRootLogin = "no";

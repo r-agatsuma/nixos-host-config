@@ -3,12 +3,12 @@ let
     # 管理用のシリアルポートを定義
     serialTty = "ttyS0";
     serialTtyNum = "0";
-    # フェールセーフ用のユーザー名を定義
+    # ユーザ名を定義
     failsafeUser = "consoleadmin";
 in
 {
     # -----------------------------------------------------------------
-    # 1. シリアルコンソール自体を有効化
+    # 1. シリアルコンソールを有効化
     # -----------------------------------------------------------------
     # シリアルコンソールの設定
     boot.kernelParams = [ "console=${serialTty},115200n8" ];
@@ -32,17 +32,17 @@ in
     };
 
     # -----------------------------------------------------------------
-    # 2. フェールセーフ（パスワード認証）ユーザーを定義
+    # 2. ユーザー定義
     # -----------------------------------------------------------------
     users.users.${failsafeUser} = {
         isNormalUser = true;
         description = "Failsafe Serial Console Administrator";
         extraGroups = [ "wheel" ]; # wheelグループに追加
-        
-        # ★ 重要：パスワードを設定する
-        # このハッシュは 'mkpasswd -m sha-512' コマンドで生成
-        # "YOUR_PASSWORD" は平文で書くな！
-        # hashedPassword = "!!PASTE_YOUR_GENERATED_HASH_HERE!!";
+        # 重要：パスワードを設定する
+        # sudo mkdir -p /etc/nixos/secrets
+        # sudo sh -c 'mkpasswd -m sha-512 > /etc/nixos/secrets/console-password'
+        # sudo chmod 600 /etc/nixos/secrets/console-password
+        hashedPasswordFile = "/etc/nixos/secrets/console-password";
     };
 
     # -----------------------------------------------------------------

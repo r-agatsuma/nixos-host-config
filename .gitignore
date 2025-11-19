@@ -9,3 +9,5 @@ hardware-configuration.nix
 # VSCode / Editor metadata
 .vscode/
 .idea/
+
+/secrets*

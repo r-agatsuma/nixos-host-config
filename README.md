@@ -1,18 +1,18 @@
 # My NixOS Host Configuration (`nixos-host-config`)
 
-This is my repository for managing NixOS host-specific configurations.
+NixOSのホスト固有の設定を管理するためのリポジトリである．
 
-## 1. Initial Setup
+## 1. 初期セットアップ
 
-Follow these steps for a freshly installed, minimal NixOS system.
+新規インストールされた最小構成のNixOSシステムに対して、以下の手順を実行する．
 
-### Step 1: On the New NixOS Machine
-1.  Log in as `root`.
-2.  Set a `root` password to allow `scp`.
+### Step 1: 新しいNixOSマシン上での操作
+1.  `root` としてログインする．
+2.  `scp` を許可するために `root` パスワードを設定する．
     ```bash
     passwd root
     ```
-3.  Enable `openssh`.
+3.  `openssh` を有効にする．
     ```bash
     nano -w /etc/nixos/configuration.nix
     services.openssh = {
@@ -21,47 +21,48 @@ Follow these steps for a freshly installed, minimal NixOS system.
     };
     nixos-rebuild switch
     ```
-4.  Get the machine's IP address.
+4.  マシンのIPアドレスを取得する．
     ```bash
     ip a
     ```
 
-### (Alternative) Using the Serial Console
+### （代替手段）シリアルコンソールの使用
 
-As an alternative to the network-based setup (steps 1-4, which **rely on** networking), you can configure the serial console to log in directly. This is especially useful for **headless machines** or VMs before networking is active.
+ネットワークベースのセットアップ（Step 1-4、これらはネットワークに依存している）の代替手段として，シリアルコンソールを設定して直接ログインできる．
+これはヘッドレスマシンや，ネットワークが有効になる前のVM（仮想マシン）で特に便利である．
 
-#### 1. Enable Serial Console in NixOS:
-Log in as `root` (e.g., **via** the VM's display console) and edit your configuration:
+#### 1. NixOSでシリアルコンソールを有効にする:
+`root` としてログインし（例：VMのディスプレイコンソール経由など），設定ファイルを編集する．
 
 ```bash
 nano -w /etc/nixos/configuration.nix
 boot.kernelParams = [ "console=ttyS0,115200n8" ];
 ```
 
-#### 2. Apply and Shut Down:
-Apply the change and shut down the machine.
+#### 2. 適用してシャットダウンする:
+変更を適用し，マシンをシャットダウンする.
 
 ```
 nixos-rebuild switch
 shutdown now
 ```
 
-#### 3. (For VMs) Attach Serial Hardware: 
-If NixOS is running in a VM, you must attach a serial port device through your hypervisor's settings (e.g., Proxmox VE):
+#### 3. （VMの場合）シリアルハードウェアを接続する
+NixOSがVMで動作している場合，ハイパーバイザーの設定（例：Proxmox VE）からシリアルポートデバイスを接続する必要がある．
 
-> VM Settings > Hardware > Add > Serial Port
+VM Settings > Hardware > Add > Serial Port
 
-(Ensure this port is configured to be accessible from your host machine.)
+（このポートがホストマシンからアクセス可能に設定されていることを確認すること）
 
-#### 4. Boot and Connect:
-Boot the NixOS machine. From your host laptop, connect using a serial client (picocom or xterm.js):
+#### 4. 起動して接続する:
+NixOSマシンを起動する．ホストのラップトップから，シリアルクライアント（picocomやxterm.js）を使用して接続する．
 
 ```bash
 picocom -b 115200 /dev/ttyUSB0
 ```
 
-### Step 2: From Your Laptop (Transfer)
-`scp` or `rsync` the entire repository to the new machine's `/root` directory. `rsync` is cleaner.
+### Step 2: ラップトップからの操作（転送）
+リポジトリ全体を新しいマシンの `/root` ディレクトリに `scp` または `rsync` する．`rsync` の方がクリーンである．
 
 ```bash
 git clone https://github.com/r-agatsuma/nixos-host-config.git
@@ -69,7 +70,7 @@ cd nixos-host-config
 rsync -rlptv --delete ./ root@<nixos-ip>:/root/nixos-host-config
 ```
 
-As an alternative, use `git`.
+代替手段として，`git` も使用できる．
 
 ```bash
 nix-env -iA nixos.git
@@ -77,46 +78,57 @@ git clone https://github.com/r-agatsuma/nixos-host-config.git /root/nixos-host-c
 cd /root/nixos-host-config
 ```
 
-### Step 3: On the New NixOS Machine (Run Setup as `root`)
-1.  Log in as `root` again.
-2.  Run the `setup-host.sh` script. This script will:
-    * Back up the original `/etc/nixos`.
-    * Copy the machine-specific `hardware-configuration.nix` from the backup.
-    * Run the first build (which creates the `dev` user).
-    * Move this config repository to its final home (`/home/dev/src/nixos-host-config`).
-    * Create the final system symlink (`/etc/nixos`).
+### Step 3: 新しいNixOSマシン上での操作 (`root` としてセットアップを実行)
+1.  再度 `root` としてログインする.
+2.  SSH公開鍵を配置する．
+3.  `setup-host.sh` スクリプトを実行する．スクリプトは以下を実行する．
+    * 元の `/etc/nixos` をバックアップ
+    * バックアップからマシン固有の `hardware-configuration.nix` をコピー
+    * 初回のビルドを実行（これにより dev ユーザーが作成される）
+    * この設定リポジトリを最終的な配置場所に移動 (`/home/dev/src/nixos-host-config`)
+    * 最終的なシステムシンボリックリンクを作成 (`/etc/nixos`).
 
 ```bash
 cd /root/nixos-host-config
 ./setup-host.sh
 ```
 
-### Step 4: On the New NixOS Machine (Finalize as `dev`)
-1.  Log out of `root` and **log in as the new `dev` user**.
-2.  Navigate to your new config directory.
+### Step 4: 新しいNixOSマシン上での操作 (`dev`として仕上げ)
+1.  `root` からログアウトし，新しい `dev` ユーザーとしてログインする．
+2.  新しい設定ディレクトリに移動する．
     ```bash
     cd ~/src/nixos-host-config
     ```
-3.  **Authenticate with GitHub.**
+3.  GitHub認証を行う．
     ```bash
     gh auth login
     ```
-4.  Your machine is now fully provisioned and linked to GitHub.
+4.  Tailscale認証を行う．
+    ```bash
+    tailscale up
+    ```
+5.  コンソールログイン用のパスワードを設定する．
+    ```bash
+    sudo mkdir -p /etc/nixos/secrets
+    sudo sh -c 'mkpasswd -m sha-512 > /etc/nixos/secrets/console-password'
+    sudo chmod 600 /etc/nixos/secrets/console-password
+    ```
+6.  これでマシンのプロビジョニングが完了した．
 
 ---
 
-## 2. Daily Workflow (Updating the System)
+## 2. 日々のワークフロー（システムの更新）
 
-This is a **pull-based** workflow, run *on the NixOS machine* as the `dev` user.
+これはプル型のワークフローであり，NixOSマシン上で `dev`ユーザーとして実行する．
 
-1.  Log in as `dev`.
-2.  Navigate to the config directory.
+1.  `dev` としてログインする
+2.  設定ディレクトリに移動する．
     ```bash
     cd ~/src/nixos-host-config
     ```
-3.  Run the `update-host.sh` script to apply the changes.
+3.  `update-host.sh` スクリプトを実行して変更を適用する．
     ```bash
     ./update-host.sh
     ```
 
-This script runs `sudo nix flake update` (to get the latest `nixpkgs` and `nixos-dev-base`) and then `sudo nixos-rebuild switch` to activate the new configuration.
+このスクリプトは `sudo nix flake update` を実行し，その後 `sudo nixos-rebuild switch` を実行して新しい設定を有効化する．

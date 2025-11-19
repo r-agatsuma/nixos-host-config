@@ -1,64 +1,85 @@
 #!/usr/bin/env bash
-set -e # エラーが出たら即座に停止
+set -e
 
 # --- 設定 ---
-CONFIG_DIR_TARGET="/home/dev/src/nixos-host-config" # 設定ファイルの最終的な場所
-CONFIG_DIR_SYMLINK="/etc/nixos"                  # NixOSが参照するシンボリックリンク
-HOST_FLAKE_NAME="nixos"                          # flake.nixで定義したホスト名
-# このスクリプトが今いるディレクトリ
+CONFIG_DIR_TARGET="/home/dev/src/nixos-host-config"
+CONFIG_DIR_SYMLINK="/etc/nixos"
+HOST_FLAKE_NAME="nixos"
 CONFIG_SOURCE_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+GITHUB_USER="$1"
 # ---
 
-echo "--- NixOS First-Time Setup ---"
+echo "--- NixOS First-Time Setup (Impure Mode) ---"
 echo "Running from: $CONFIG_SOURCE_DIR"
 
 # 1. 既にセットアップ済みか確認
 if [ -L "$CONFIG_DIR_SYMLINK" ] && [ "$(readlink -f "$CONFIG_DIR_SYMLINK")" = "$CONFIG_DIR_TARGET" ]; then
-  echo "Setup already complete (symlink $CONFIG_DIR_SYMLINK -> $CONFIG_DIR_TARGET exists)."
-  echo "Log in as 'dev' user to manage this system."
+  echo "Setup already complete."
   exit 0
 fi
 
 # 2. 既存の /etc/nixos をバックアップ
 if [ -d "$CONFIG_DIR_SYMLINK" ] && [ ! -L "$CONFIG_DIR_SYMLINK" ]; then
-  echo "Backing up existing /etc/nixos to /etc/nixos.bak..."
+  echo "Backing up existing /etc/nixos..."
   mv "$CONFIG_DIR_SYMLINK" /etc/nixos.bak
 elif [ -L "$CONFIG_DIR_SYMLINK" ]; then
-  echo "Removing broken symlink $CONFIG_DIR_SYMLINK..."
   rm "$CONFIG_DIR_SYMLINK"
 fi
 
-# 3. マシン固有の hardware-configuration.nix をバックアップからコピー
-echo "Copying hardware-configuration.nix from /etc/nixos.bak..."
-if [ ! -f /etc/nixos.bak/hardware-configuration.nix ]; then
-    echo "ERROR: /etc/nixos.bak/hardware-configuration.nix not found!"
-    echo "This file is required. Please ensure you ran nixos-generate-config first."
-    exit 1
+# 3. ハードウェア設定の確保
+echo "Ensuring hardware-configuration.nix exists..."
+if [ ! -f "$CONFIG_SOURCE_DIR/hardware-configuration.nix" ]; then
+    if [ -f /etc/nixos.bak/hardware-configuration.nix ]; then
+        cp /etc/nixos.bak/hardware-configuration.nix "$CONFIG_SOURCE_DIR/"
+    else
+        echo "ERROR: hardware-configuration.nix not found!"
+        exit 1
+    fi
 fi
-cp /etc/nixos.bak/hardware-configuration.nix "$CONFIG_SOURCE_DIR/"
-echo "-> hardware-configuration.nix copied."
 
-# 4. 最初のビルド
-echo "Running first build from $CONFIG_SOURCE_DIR..."
-echo "This will create the 'dev' user and their home directory..."
-# SATD: どう考えてももっとましな解決策がある
-git add  -f hardware-configuration.nix
-nixos-rebuild switch --flake "$CONFIG_SOURCE_DIR#$HOST_FLAKE_NAME"
-git reset hardware-configuration.nix
-
-# 5. ビルド成功。設定ファイルを最終的な場所 (/home/dev/...) に移動
-echo "Build successful. Moving config to $CONFIG_DIR_TARGET..."
+# 4. 設定移動とリンク作成 (ビルド前にやってしまう)
+# Impureモードで /etc/nixos/... を参照させるため、先にリンクが必要
+echo "Moving config to $CONFIG_DIR_TARGET..."
 mkdir -p "$(dirname "$CONFIG_DIR_TARGET")"
-mv "$CONFIG_SOURCE_DIR" "$CONFIG_DIR_TARGET"
+# 自分自身の中に移動しようとしないかチェック
+if [ "$CONFIG_SOURCE_DIR" != "$CONFIG_DIR_TARGET" ]; then
+    mv "$CONFIG_SOURCE_DIR" "$CONFIG_DIR_TARGET"
+fi
 
-# 6. dev ユーザーに所有権を渡す
+echo "Creating symlink: $CONFIG_DIR_SYMLINK -> $CONFIG_DIR_TARGET"
+ln -s "$CONFIG_DIR_TARGET" "$CONFIG_DIR_SYMLINK"
 chown -R dev:users "$(dirname "$CONFIG_DIR_TARGET")"
 
-# 7. 最終的なシンボリックリンクを作成
-echo "Creating final symlink: $CONFIG_DIR_SYMLINK -> $CONFIG_DIR_TARGET"
-ln -s "$CONFIG_DIR_TARGET" "$CONFIG_DIR_SYMLINK"
+# 5. 最初のビルド (Impure)
+echo "Running first build..."
+nixos-rebuild switch --flake "$CONFIG_DIR_TARGET#$HOST_FLAKE_NAME" --impure
 
-echo "---"
+# ==========================================
+# SSH Key Injection
+# ==========================================
+echo "--- Configuring SSH keys for 'dev' user ---"
+SSH_DIR="/home/dev/.ssh"
+AUTH_KEYS_FILE="$SSH_DIR/authorized_keys"
+SSH_KEYS_CONTENT=""
+
+if [ -n "$GITHUB_USER" ]; then
+    echo "Fetching keys from GitHub for user '$GITHUB_USER'..."
+    SSH_KEYS_CONTENT=$(curl -fsSL "https://github.com/${GITHUB_USER}.keys" || echo "")
+elif [ ! -t 0 ]; then
+    echo "Reading keys from stdin..."
+    SSH_KEYS_CONTENT=$(cat)
+else
+    echo "Skipping SSH key configuration."
+fi
+
+if [ -n "$SSH_KEYS_CONTENT" ]; then
+    mkdir -p "$SSH_DIR"
+    echo "$SSH_KEYS_CONTENT" > "$AUTH_KEYS_FILE"
+    chmod 700 "$SSH_DIR"
+    chmod 600 "$AUTH_KEYS_FILE"
+    chown -R dev:users "$SSH_DIR"
+    echo "SSH keys configured."
+fi
+# ==========================================
+
 echo "--- Provisioning Complete! ---"
-echo "Log out of 'root' and log in as the 'dev' user."
-echo "As 'dev', initialize Git and authenticate with 'gh auth login'."

@@ -17,7 +17,8 @@
           networking.hostName = "nixos"; # ホスト名
           system.stateVersion = "25.05"; # どの安定版リリースのデフォルト値や動作を前提に書かれたものか指定，変更するな
         }
-        ./hardware-configuration.nix  # マシン固有の設定
+        #./hardware-configuration.nix  # マシン固有の設定
+        (import "/etc/nixos/hardware-configuration.nix")
         ./dev-base.nix                # 共通パッケージ
         ./user.nix                    # dev ユーザー SSHキーの設定など           
         ./boot-bios.nix               # biosによる起動

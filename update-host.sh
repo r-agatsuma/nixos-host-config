@@ -1,22 +1,20 @@
 #!/usr/bin/env bash
-set -e # エラーが出たら即座に停止
+set -e
 
 # --- 設定 ---
 HOST_FLAKE_NAME="nixos"
 GIT_BRANCH="main"
 # ---
 
-echo "--- Applying NixOS System Updates ---"
+echo "--- Applying NixOS System Updates (Impure) ---"
 
-echo '--- Pulling latest changes from Git ($GIT_BRANCH) ---'
+echo "--- Pulling latest changes from Git ($GIT_BRANCH) ---"
 git pull origin $GIT_BRANCH
 
-echo '--- Updating flake inputs (like nixos-dev-base) ---'
+echo '--- Updating flake inputs ---'
 sudo nix flake update
 
-echo '---  Rebuild NixOS ---'
-# SATD: どう考えてももっとましな解決策がある
-git add  -f hardware-configuration.nix
-sudo nixos-rebuild switch --flake .#$HOST_FLAKE_NAME
-git reset hardware-configuration.nix
+echo '--- Rebuild NixOS ---'
+sudo nixos-rebuild switch --flake .#$HOST_FLAKE_NAME --impure
+
 echo '--- Update Complete ---'
