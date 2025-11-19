@@ -12,7 +12,8 @@
 
     # インプットメソッド
     i18n.inputMethod = {
-        enabled = "fcitx5";
+        enable = true;
+        type = "fcitx5";
         fcitx5.addons = [pkgs.fcitx5-mozc];
     };
     # フォント
@@ -21,7 +22,8 @@
             noto-fonts-cjk-serif
             noto-fonts-cjk-sans
             noto-fonts-emoji
-            nerdfonts
+            nerd-fonts.jetbrains-mono
+            nerd-fonts.fira-code
         ];
         fontDir.enable = true;
         fontconfig = {
